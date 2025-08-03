@@ -1,0 +1,1195 @@
+local insert, unpack, foreach, find
+do
+  local _obj_0 = table
+  insert, unpack, foreach, find = _obj_0.insert, _obj_0.unpack, _obj_0.foreach, _obj_0.find
+end
+local min, max, random, floor, abs, tan, rad, huge, clamp, pi, cos, sin
+do
+  local _obj_0 = math
+  min, max, random, floor, abs, tan, rad, huge, clamp, pi, cos, sin, huge = _obj_0.min, _obj_0.max, _obj_0.random, _obj_0.floor, _obj_0.abs, _obj_0.tan, _obj_0.rad, _obj_0.huge, _obj_0.clamp, _obj_0.pi, _obj_0.cos, _obj_0.sin, _obj_0.huge
+end
+local Ccreate, Cresume
+do
+  local _obj_0 = coroutine
+  Ccreate, Cresume = _obj_0.create, _obj_0.resume
+end
+local V2new, V2zero
+do
+  local _obj_0 = Vector2
+  V2new, V2zero = _obj_0.new, _obj_0.zero
+end
+local V3new, V3zero
+do
+  local _obj_0 = Vector3
+  V3new, V3zero = _obj_0.new, _obj_0.zero
+end
+local V3Dot
+V3Dot = V3zero.Dot
+local CFnew, CFAngles
+do
+  local _obj_0 = CFrame
+  CFnew, CFAngles = _obj_0.new, _obj_0.Angles
+end
+local Service
+Service = function(Name)
+  return cloneref(game:GetService(Name))
+end
+local Workspace = Service('Workspace')
+local Camera = Workspace.CurrentCamera
+local Stats = Service('Stats')
+local CoreGui = Service('CoreGui')
+local Players = Service('Players')
+local Lighting = Service('Lighting')
+local RunService = Service('RunService')
+local TweenService = Service('TweenService')
+local UserInputService = Service('UserInputService')
+local ReplicatedStorage = Service('ReplicatedStorage')
+local LocalPlayer = Players.LocalPlayer
+local LocalCharacter = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local LocalHumanoid = LocalCharacter and LocalCharacter:FindFirstChildOfClass('Humanoid')
+local LocalRoot = LocalCharacter and LocalCharacter:FindFirstChild('HumanoidRootPart')
+LocalPlayer.CharacterAdded:Connect(function(NewCharacter)
+  LocalCharacter = NewCharacter
+  LocalHumanoid = NewCharacter:WaitForChild('Humanoid')
+  LocalRoot = NewCharacter:WaitForChild('HumanoidRootPart')
+end)
+local AiZones = Workspace.AiZones
+local Modules = ReplicatedStorage.Modules
+local Remotes = ReplicatedStorage.Remotes
+local FireProjectile = Remotes.FireProjectile
+local UpdateSettings = Remotes.UpdateSettings
+local ProjectileInflict = Remotes.ProjectileInflict
+local FPS = require(Modules.FPS)
+local Bullet = require(Modules.FPS.Bullet)
+local FunctionLibraryExtension = require(Modules.FunctionLibraryExtension)
+local UpdateFunction = nil
+local _list_0 = getconnections(UpdateSettings.OnClientEvent)
+for _index_0 = 1, #_list_0 do
+  local Data = _list_0[_index_0]
+  if Data.Function and #getupvalues(Data.Function) == 18 then
+    UpdateFunction = Data.Function
+    break
+  end
+end
+local Update = getupvalue(getupvalue(UpdateFunction, 8), 1)
+local Springs = Update.springs
+local Hax
+do
+  local _class_0
+  local _base_0 = {
+    Connections = { },
+    Drawings = { },
+    Hooks = { },
+    LastFire = 0,
+    Closest = {
+      Player = nil,
+      Distance = nil,
+      RayPosition = nil,
+      HitPart = nil
+    },
+    FakePosition = nil,
+    CurrentWeapon = {
+      MuzzleVelocity = 5000,
+      ProjectileDrop = nil,
+      ProjectileTime = nil
+    },
+    Draw = function(Class, Properties)
+      local Drawing = Drawing.new(Class)
+      for Key, Value in Properties do
+        Drawing[Key] = Value
+      end
+      Drawing.Color = Properties.Color or Color3.fromRGB(255, 255, 255)
+      insert(Hax.Drawings, Drawing)
+      return Drawing
+    end,
+    Thread = function(Func, Name, ...)
+      local Args = {
+        ...
+      }
+      local Thread = Ccreate(function()
+        local Passed, Statement = pcall(Func, unpack(Args))
+        if not (Passed) then
+          return warn('Error in thread #{Name or "Unnamed"}: #{tostring Statement}')
+        end
+      end)
+      local Success, ErrorMsg = Cresume(Thread)
+      if not (Success) then
+        error('Failed to start thread #{Name or "Unnamed"}: #{tostring ErrorMsg}')
+      end
+      return Thread
+    end,
+    Heartbeat = function(Func)
+      local Connection = RunService.Heartbeat:Connect(function()
+        return Func()
+      end)
+      insert(Hax.Connections, Connection)
+      return Connection
+    end,
+    Renderstepped = function(Func)
+      local Connection = RunService.RenderStepped:Connect(function()
+        return Func()
+      end)
+      insert(Hax.Connections, Connection)
+      return Connection
+    end,
+    HookFunc = function(OldFunction, NewFunction)
+      local Old = nil
+      Old = hookfunction(OldFunction, function(...)
+        return NewFunction(Old, ...)
+      end)
+      insert(Hax.Hooks, Old)
+      return Old
+    end
+  }
+  _base_0.__index = _base_0
+  _class_0 = setmetatable({
+    __init = function() end,
+    __base = _base_0,
+    __name = "Hax"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  Hax = _class_0
+end
+do
+  local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/randy-rash/LinoriaLib/refs/heads/main/Library.lua'))()
+  local ThemeManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/refs/heads/main/addons/ThemeManager.lua'))()
+  local SaveManager = loadstring(game:HttpGet('https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/refs/heads/main/addons/SaveManager.lua'))()
+  local Main = Library:CreateWindow({
+    Title = 'SussyHook',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 0.3
+  })
+  local Combat = Main:AddTab('Combat')
+  local VisualsBox = Main:AddTab('Visuals')
+  local Misc = Main:AddTab('Misc')
+  local Settings = Main:AddTab('Settings')
+  local SilentAim = Combat:AddLeftGroupbox('Silent Aim')
+  local GunMods = Combat:AddRightGroupbox('Gun Mods')
+  local ResolverBox = Combat:AddLeftGroupbox('Resolver')
+  local ESP = VisualsBox:AddLeftGroupbox('ESP')
+  local World = VisualsBox:AddRightGroupbox('World')
+  local CameraBox = VisualsBox:AddRightGroupbox('Camera')
+  local MiscBox = Misc:AddLeftGroupbox('Misc')
+  local Debug = Misc:AddRightGroupbox('Debug')
+  local SettingsBox = Settings:AddLeftGroupbox('Settings')
+  SilentAim:AddToggle('SilentAim/Enabled', {
+    Text = 'Enabled',
+    Default = false,
+    Tooltip = 'Redirects bullets'
+  }):AddKeyPicker('SilentAimKeyBind', {
+    Default = 'C',
+    NoUI = false,
+    Text = 'Silent Aim',
+    SyncToggleState = true
+  })
+  SilentAim:AddToggle('SilentAim/AutoShoot', {
+    Text = 'Auto Shoot',
+    Default = false
+  })
+  SilentAim:AddToggle('SilentAim/ForceHit', {
+    Text = 'Force Hit',
+    Default = false
+  })
+  SilentAim:AddToggle('SilentAim/VisibleCheck', {
+    Text = 'Visible Only',
+    Default = false
+  })
+  SilentAim:AddDropdown('SilentAim/AimParts', {
+    Values = {
+      'Head',
+      'HeadTopHitBox',
+      'UpperTorso',
+      'LowerTorso',
+      'HumanoidRootPart'
+    },
+    Default = 1,
+    Multi = true,
+    Text = 'Aim Parts'
+  })
+  ResolverBox:AddToggle('Resolver/Velocity', {
+    Text = 'Resolve Velocity',
+    Default = false
+  })
+  local UndergroundEnabled = ResolverBox:AddToggle('Resolver/Underground', {
+    Text = 'Resolve Underground',
+    Default = false
+  })
+  local UndergroundResolverBox = ResolverBox:AddDependencyBox()
+  UndergroundResolverBox:AddSlider('Resolver/UndergroundHeight', {
+    Text = 'Height',
+    Default = 0,
+    Min = 0,
+    Max = 15,
+    Rounding = 1,
+    Suffix = 'm',
+    Compact = true
+  })
+  UndergroundResolverBox:SetupDependencies({
+    {
+      UndergroundEnabled,
+      true
+    }
+  })
+  local TabBox = Combat:AddRightTabbox()
+  local Fov = TabBox:AddTab('FOV')
+  local Indicator = TabBox:AddTab('Indicator')
+  Indicator:AddToggle('SilentAim/Indicator', {
+    Text = 'Indicator',
+    Default = false
+  })
+  Indicator:AddToggle('SilentAim/HighlightTarget', {
+    Text = 'Highlight Target',
+    Default = false
+  }):AddColorPicker('SilentAim/HighlightTargetColor', {
+    Text = 'Highlight Target Color',
+    Default = Color3.fromRGB(255, 0, 0),
+    Transparency = 0.5
+  })
+  Indicator:AddToggle('SilentAim/HighlightTargetPart', {
+    Text = 'Highlight Target Part',
+    Default = false
+  })
+  Indicator:AddToggle('SilentAim/SnapLinesEnabled', {
+    Text = 'Snap Lines',
+    Default = false
+  })
+  Fov:AddToggle('SilentAim/FovVisible', {
+    Text = 'Show FOV',
+    Default = false
+  })
+  Fov:AddSlider('SilentAim/Fov', {
+    Min = 0,
+    Max = 720,
+    Default = 300,
+    Compact = true,
+    Rounding = 0,
+    Text = 'FOV Size'
+  })
+  GunMods:AddToggle('GunMods/FastEquipEnabled', {
+    Text = 'Fast Equip',
+    Default = false
+  })
+  GunMods:AddToggle('GunMods/FastReload', {
+    Text = 'Fast Reload',
+    Default = false
+  })
+  GunMods:AddToggle('GunMods/RapidFireEnabled', {
+    Text = 'Rapid Fire',
+    Default = false
+  })
+  GunMods:AddSlider('GunMods/RapidFireAmount', {
+    Min = 0,
+    Max = 100,
+    Default = 1,
+    Compact = true,
+    Rounding = 0,
+    Text = 'Fire Rate'
+  })
+  ESP:AddToggle('ESP/Enabled', {
+    Text = 'Enabled',
+    Default = false
+  })
+  ESP:AddDivider()
+  local BoxToggle = ESP:AddToggle('ESP/BoxEnabled', {
+    Text = 'Box',
+    Default = false
+  }):AddColorPicker('ESP/BoxColor', {
+    Text = 'Box Color',
+    Default = Color3.fromRGB(255, 255, 255)
+  })
+  local BoxDepBox = ESP:AddDependencyBox()
+  BoxDepBox:AddDropdown('ESP/BoxMode', {
+    Values = {
+      'Static',
+      'Dynamic'
+    },
+    Default = 1,
+    Multi = false,
+    Text = 'Box Style'
+  })
+  BoxDepBox:AddToggle('ESP/BoxFillEnabled', {
+    Text = 'Box Fill',
+    Default = false
+  }):AddColorPicker('ESP/BoxFillColor', {
+    Text = 'Box Fill Color',
+    Default = Color3.fromRGB(255, 255, 255),
+    Transparency = 0.5
+  })
+  BoxDepBox:SetupDependencies({
+    {
+      BoxToggle,
+      true
+    }
+  })
+  ESP:AddToggle('ESP/NameEnabled', {
+    Text = 'Name',
+    Default = false
+  }):AddColorPicker('ESP/NameColor', {
+    Text = 'Name Color',
+    Default = Color3.fromRGB(255, 255, 255)
+  })
+  ESP:AddToggle('ESP/DistanceEnabled', {
+    Text = 'Distance',
+    Default = false
+  }):AddColorPicker('ESP/DistanceColor', {
+    Text = 'Distance Color',
+    Default = Color3.fromRGB(255, 255, 255)
+  })
+  ESP:AddToggle('ESP/HealthBarEnabled', {
+    Text = 'Health Bar',
+    Default = false
+  }):AddColorPicker('ESP/HealthBarColor1', {
+    Text = 'Health Bar Color',
+    Default = Color3.fromRGB(0, 255, 0)
+  }):AddColorPicker('ESP/HealthBarColor2', {
+    Text = 'Health Bar Color',
+    Default = Color3.fromRGB(255, 0, 0)
+  })
+  ESP:AddToggle('ESP/HealthTextEnabled', {
+    Text = 'Health Text',
+    Default = false
+  }):AddColorPicker('ESP/HealthTextColor', {
+    Text = 'Health Text Color',
+    Default = Color3.fromRGB(255, 255, 255)
+  })
+  ESP:AddToggle('ESP/ChamsEnabled', {
+    Text = 'Chams',
+    Default = false
+  }):AddColorPicker('ESP/ChamsColor', {
+    Text = 'Chams Color',
+    Default = Color3.fromRGB(255, 255, 255)
+  })
+  ESP:AddDivider()
+  ESP:AddToggle('ESP/IncludeAi', {
+    Text = 'Include Ai',
+    Default = false
+  })
+  World:AddToggle('World/FullBrightEnabled', {
+    Text = 'Full Bright',
+    Default = false
+  }):AddColorPicker('World/Ambient', {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title = 'Ambient'
+  })
+  World:AddSlider('World/Brightness', {
+    Min = 0,
+    Max = 20,
+    Default = 3,
+    Compact = true,
+    Rounding = 1,
+    Text = 'Brightness'
+  })
+  World:AddToggle('World/NoFogEnabled', {
+    Text = 'No Fog',
+    Default = false
+  })
+  World:AddSlider('World/TimeOfDay', {
+    Min = 0,
+    Max = 24,
+    Default = 0,
+    Compact = true,
+    Rounding = 1,
+    Text = 'Time of Day'
+  }, {
+    Text = 'Enabled',
+    Default = false
+  })
+  Debug:AddToggle('Debug/DebugEnabled', {
+    Text = 'Enabled',
+    Default = false
+  })
+  Debug:AddDropdown('Debug/Debugs', {
+    Values = {
+      'Prediction',
+      'Projectile Drop',
+      'Projectile Time',
+      'Player Join',
+      'Player Leave'
+    },
+    Default = 1,
+    Multi = true,
+    Text = 'Debugs'
+  })
+  MiscBox:AddToggle('Misc/WalkspeedEnabled', {
+    Text = 'Walkspeed',
+    Default = false
+  })
+  MiscBox:AddSlider('Misc/Walkspeed', {
+    Min = 0,
+    Max = 22,
+    Default = 0,
+    Compact = true,
+    Rounding = 1,
+    Text = 'Walkspeed'
+  })
+  MiscBox:AddToggle('Misc/JumppowerEnabled', {
+    Text = 'Jumppower',
+    Default = false
+  })
+  MiscBox:AddSlider('Misc/Jumppower', {
+    Min = 0,
+    Max = 10,
+    Default = 0,
+    Compact = true,
+    Rounding = 1,
+    Text = 'Jumppower'
+  })
+  MiscBox:AddToggle('Misc/UndergroundEnabled', {
+    Text = 'Underground',
+    Default = false
+  }):AddKeyPicker('Misc/UndergroundKeyBind', {
+    Default = 'K',
+    NoUI = false,
+    Text = 'Underground',
+    SyncToggleState = true
+  })
+  SettingsBox:AddButton('Unload', function()
+    Library:Unload()
+    return pcall(function()
+      local _list_1 = Hax.Connections
+      for _index_0 = 1, #_list_1 do
+        local Connection = _list_1[_index_0]
+        Connection:Disconnect()
+      end
+      local _list_2 = Hax.Drawings
+      for _index_0 = 1, #_list_2 do
+        local Drawing = _list_2[_index_0]
+        Drawing:Remove()
+      end
+      local _list_3 = Hax.Hooks
+      for _index_0 = 1, #_list_3 do
+        local Hook = _list_3[_index_0]
+        restorefunction(Hook)
+      end
+    end)
+  end)
+  SettingsBox:AddLabel('Menu Bind'):AddKeyPicker('MenuKeybind', {
+    Default = 'End',
+    NoUI = true,
+    Text = 'Menu keybind'
+  })
+  SettingsBox:AddToggle('Watermark', {
+    Text = 'Watermark',
+    Default = false,
+    Tooltip = 'Shows a watermark on the top right of the screen',
+    Callback = function(Value)
+      return Library:SetWatermarkVisibility(Value)
+    end
+  })
+  local FrameTime = tick()
+  local FrameCount = 0
+  local Frames = 60
+  Hax.Renderstepped(function()
+    FrameCount = FrameCount + 1
+    if (tick() - FrameTime) >= 1 then
+      Frames = FrameCount
+      FrameTime = tick()
+      FrameCount = 0
+    end
+    local MemoryUsage = Stats:GetTotalMemoryUsageMb()
+    return Library:SetWatermark("SussyHook / fps: " .. tostring(floor(Frames)) .. " / mem usage: " .. tostring(floor(MemoryUsage)) .. " mb")
+  end)
+  Library.ToggleKeybind = Options.MenuKeybind
+  ThemeManager:SetLibrary(Library)
+  SaveManager:SetLibrary(Library)
+  SaveManager:IgnoreThemeSettings()
+  SaveManager:SetIgnoreIndexes({
+    'MenuKeybind'
+  })
+  ThemeManager:SetFolder('SussyHook')
+  SaveManager:SetFolder('SussyHook/Project Delta')
+  SaveManager:BuildConfigSection(Settings)
+  ThemeManager:ApplyToTab(Settings)
+  SaveManager:LoadAutoloadConfig()
+  Library.KeybindFrame.Visible = true
+end
+local Flags = setmetatable({ }, {
+  __index = function(self, Index)
+    return Toggles[Index] or Options[Index]
+  end
+})
+local Utils
+do
+  local _class_0
+  local _parent_0 = Hax
+  local _base_0 = {
+    GetCharacter = function(Player)
+      if Player and Player.IsA(Player, 'Player') and Player.Character then
+        return Player.Character
+      end
+      return nil
+    end,
+    GetRoot = function(Player)
+      local Character = Utils.GetCharacter(Player)
+      if Character then
+        return Character.FindFirstChild(Character, 'HumanoidRootPart')
+      end
+      return nil
+    end,
+    IsAlive = function(Player)
+      local Character = Utils.GetCharacter(Player)
+      local Humanoid = Character and Character:FindFirstChildOfClass('Humanoid')
+      return Humanoid and Humanoid.Health > 0 or false
+    end,
+    PredictVelocity = function(Target, Speed)
+      local CameraPos = FunctionLibraryExtension:GetEstimatedCameraPosition(LocalPlayer)
+      local Distance = (Target.Position - CameraPos).Magnitude
+      local Time = Distance / Speed
+      return Target.CFrame.Position + Target.Velocity * Time
+    end,
+    IsVisible = function(Part)
+      local Params = RaycastParams.new()
+      Params.FilterType = Enum.RaycastFilterType.Blacklist
+      Params.IgnoreWater = true
+      Params.FilterDescendantsInstances = {
+        LocalCharacter,
+        Workspace.NoCollision.FoliageZones,
+        Workspace.SpawnerZones.Foliage
+      }
+      local Direction = (Part.Position - Camera.CFrame.Position).Unit * Hax.CurrentWeapon.MuzzleVelocity
+      local Ray = Workspace:Raycast(Camera.CFrame.Position, Direction, Params)
+      if Ray and Ray.Instance and (Ray.Instance == Part or Ray.Instance:IsDescendantOf(Part.Parent)) then
+        return true, Ray.Position
+      else
+        return false, nil
+      end
+    end,
+    GetClosestPlayer = function()
+      local MousePos = UserInputService:GetMouseLocation()
+      local Parts
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        for Part, Enabled in Flags['SilentAim/AimParts'].Value do
+          if Enabled then
+            _accum_0[_len_0] = Part
+            _len_0 = _len_0 + 1
+          end
+        end
+        Parts = _accum_0
+      end
+      local Targets
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        local _list_1 = Players:GetPlayers()
+        for _index_0 = 1, #_list_1 do
+          local _continue_0 = false
+          repeat
+            local Player = _list_1[_index_0]
+            if Player == LocalPlayer then
+              _continue_0 = true
+              break
+            end
+            local Root = Utils.GetRoot(Player)
+            if not (Root and Utils.IsAlive(Player)) then
+              _continue_0 = true
+              break
+            end
+            local ScreenPos, OnScreen = Camera:WorldToScreenPoint(Root.Position)
+            if not (OnScreen) then
+              _continue_0 = true
+              break
+            end
+            local HitPart = Player.Character[Parts[random(#Parts)]]
+            local IsVisible, RayPos = Utils.IsVisible(HitPart)
+            if Flags['SilentAim/VisibleCheck'].Value and not IsVisible then
+              _continue_0 = true
+              break
+            end
+            local Distance = (MousePos - V2new(ScreenPos.X, ScreenPos.Y)).Magnitude
+            if Distance > Flags['SilentAim/Fov'].Value then
+              _continue_0 = true
+              break
+            end
+            local _value_0 = {
+              Player = Player,
+              Distance = Distance,
+              RayPos = RayPos or HitPart.Position,
+              HitPart = HitPart
+            }
+            _accum_0[_len_0] = _value_0
+            _len_0 = _len_0 + 1
+            _continue_0 = true
+          until true
+          if not _continue_0 then
+            break
+          end
+        end
+        Targets = _accum_0
+      end
+      if #Targets > 0 then
+        local MinTarget = Targets[1]
+        for _index_0 = 1, #Targets do
+          local Target = Targets[_index_0]
+          if Target.Distance < MinTarget.Distance then
+            MinTarget = Target
+          end
+        end
+        Hax.Closest.Player = MinTarget.Player
+        Hax.Closest.Distance = MinTarget.Distance
+        Hax.Closest.RayPosition = MinTarget.RayPos
+        Hax.Closest.HitPart = MinTarget.HitPart
+      else
+        Hax.Closest.Player = nil
+        Hax.Closest.Distance = nil
+        Hax.Closest.RayPosition = nil
+        Hax.Closest.HitPart = nil
+      end
+    end,
+    GetAmmoInfo = function(Ammo)
+      if ReplicatedStorage.AmmoTypes:FindFirstChild(Ammo) then
+        return ReplicatedStorage.AmmoTypes:FindFirstChild(Ammo)
+      end
+      return nil
+    end,
+    GetBoundingBox = function(self, Root)
+      if not (Root) then
+        return V2zero, V2zero
+      end
+      local Character = Root.Parent
+      local IsAlive = Utils.IsAlive(Players[Character.Name])
+      if not (IsAlive) then
+        return V2zero, V2zero
+      end
+      local CFrame, Size = Character:GetBoundingBox()
+      local Min = CFrame.Position - Size * 0.5
+      local Max = CFrame.Position + Size * 0.5
+      local Points = {
+        V3new(Min.X, Min.Y, Min.Z),
+        V3new(Min.X, Min.Y, Max.Z),
+        V3new(Min.X, Max.Y, Min.Z),
+        V3new(Min.X, Max.Y, Max.Z),
+        V3new(Max.X, Min.Y, Min.Z),
+        V3new(Max.X, Min.Y, Max.Z),
+        V3new(Max.X, Max.Y, Min.Z),
+        V3new(Max.X, Max.Y, Max.Z)
+      }
+      local Screen = { }
+      local Valid = true
+      for _index_0 = 1, #Points do
+        local Point = Points[_index_0]
+        local ScreenPoint, OnScreen = Camera:WorldToViewportPoint(Point)
+        if not OnScreen then
+          Valid = false
+          break
+        end
+        insert(Screen, V2new(ScreenPoint.X, ScreenPoint.Y))
+      end
+      if not (Valid) then
+        return V2zero, V2zero
+      end
+      local MinX, MaxX = huge, -huge
+      local MinY, MaxY = huge, -huge
+      for _index_0 = 1, #Screen do
+        local Point = Screen[_index_0]
+        MinX = min(MinX, Point.X)
+        MaxX = max(MaxX, Point.X)
+        MinY = min(MinY, Point.Y)
+        MaxY = max(MaxY, Point.Y)
+      end
+      local BoxPosition = V2new(floor(MinX), floor(MinY))
+      local BoxSize = V2new(floor(MaxX - MinX), floor(MaxY - MinY))
+      return BoxPosition, BoxSize
+    end,
+    GetStaticBox = function(self, Root)
+      if not (Root) then
+        return V2zero, V2zero
+      end
+      local Position, Visible = Camera:WorldToViewportPoint(Root.Position)
+      if Visible then
+        local ViewportSize = Camera.ViewportSize
+        local ScreenWidth, ScreenHeight = ViewportSize.X, ViewportSize.Y
+        local Factor = 1 / (Position.Z * tan(rad(Camera.FieldOfView * 0.5)) * 2) * 100
+        local Width = floor(ScreenHeight / 25 * Factor)
+        local Height = floor(ScreenWidth / 27 * Factor)
+        local BoxSize = V2new(Width, Height)
+        local BoxPosition = V2new(Position.X - Width / 2, Position.Y - Height / 2.2)
+        return BoxPosition, BoxSize
+      else
+        return V2zero, V2zero
+      end
+    end,
+    LastUpdate = 0
+  }
+  _base_0.__index = _base_0
+  setmetatable(_base_0, _parent_0.__base)
+  _class_0 = setmetatable({
+    __init = function(self, ...)
+      return _class_0.__parent.__init(self, ...)
+    end,
+    __base = _base_0,
+    __name = "Utils",
+    __parent = _parent_0
+  }, {
+    __index = function(cls, name)
+      local val = rawget(_base_0, name)
+      if val == nil then
+        local parent = rawget(cls, "__parent")
+        if parent then
+          return parent[name]
+        end
+      else
+        return val
+      end
+    end,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  local self = _class_0
+  Hax.Heartbeat(function()
+    if tick() - Utils.LastUpdate >= 0.05 then
+      Utils.GetClosestPlayer()
+      Utils.LastUpdate = tick()
+    end
+  end)
+  if _parent_0.__inherited then
+    _parent_0.__inherited(_parent_0, _class_0)
+  end
+  Utils = _class_0
+end
+local Visuals
+do
+  local _class_0
+  local _base_0 = {
+    Objects = {
+      ESP = { },
+      Fov = Hax.Draw('Circle', {
+        Thickness = 1.5,
+        NumSides = 360,
+        Filled = false
+      }),
+      Indicator = Hax.Draw('Text', {
+        Center = true,
+        Size = 13,
+        Font = 2,
+        Outline = true
+      }),
+      SnapLine = Hax.Draw('Line', {
+        Thickness = 1
+      })
+    },
+    NewESP = function(self, Player, IsAi)
+      local PlayerInfo = {
+        Main = Player,
+        Components = { }
+      }
+      local Components = PlayerInfo.Components
+      Components.Name = Hax.Draw('Text', {
+        Text = Player.Name,
+        Center = true,
+        Size = 13,
+        Font = 2,
+        Outline = true
+      })
+      Components.BoundingBoxOutline = Hax.Draw('Square', {
+        Thickness = 2.8,
+        Filled = false,
+        Color = Color3.fromRGB(0, 0, 0)
+      })
+      Components.BoundingBoxFill = Hax.Draw('Square', {
+        Thickness = 0.4,
+        Filled = true
+      })
+      Components.BoundingBox = Hax.Draw('Square', {
+        Thickness = 0.8,
+        Filled = false
+      })
+      Components.HealthBarOutline = Hax.Draw('Square', {
+        Thickness = 1.5,
+        Filled = true,
+        Color = Color3.fromRGB(0, 0, 0)
+      })
+      Components.HealthBar = Hax.Draw('Square', {
+        Thickness = 1.5,
+        Filled = true
+      })
+      Components.HealthText = Hax.Draw('Text', {
+        Text = '0',
+        Center = true,
+        Size = 13,
+        Font = 2,
+        Outline = true
+      })
+      Components.Distance = Hax.Draw('Text', {
+        Text = '0',
+        Center = true,
+        Size = 13,
+        Font = 2,
+        Outline = true
+      })
+      PlayerInfo.ToggleVisibility = function(self, State)
+        for Key, Object in self.Components do
+          if typeof(Object) == 'DrawingObject' then
+            Object.Visible = State
+          else
+            Object.Enabled = State
+          end
+        end
+      end
+      PlayerInfo.Destroy = function(self)
+        for Key, Object in self.Components do
+          if typeof(Object) == 'DrawingObject' then
+            Object:Remove()
+          else
+            Object:Destroy()
+          end
+        end
+      end
+      PlayerInfo.Update = function(self)
+        local RootPart, IsAlive, Character = nil, false, nil
+        if not (IsAi) then
+          RootPart = Utils.GetRoot(self.Main)
+          IsAlive = Utils.IsAlive(self.Main)
+          Character = self.Main and self.Main.Character
+        else
+          RootPart = self.Main.PrimaryPart
+          IsAlive = self.Main.Humanoid.Health > 0
+          Character = self.Main
+        end
+        if not (Flags['ESP/Enabled'].Value and RootPart and IsAlive and Character) then
+          self:ToggleVisibility(false)
+          return 
+        end
+        if IsAi and not Flags['ESP/IncludeAi'].Value then
+          self:ToggleVisibility(false)
+        end
+        local _, OnScreen = Camera:WorldToViewportPoint(RootPart.Position)
+        if OnScreen then
+          local BoxPosition, BoxSize = V2zero, V2zero
+          if Flags['ESP/BoxMode'].Value == 'Dynamic' then
+            BoxPosition, BoxSize = Utils:GetBoundingBox(RootPart)
+          else
+            BoxPosition, BoxSize = Utils:GetStaticBox(RootPart)
+          end
+          local Distance = (Camera.CFrame.Position - RootPart.Position).Magnitude
+          local Health, MaxHealth = Character.Humanoid.Health or 100, Character.Humanoid.MaxHealth or 100
+          local Color = Flags['ESP/HealthBarColor2'].Value:Lerp(Flags['ESP/HealthBarColor1'].Value, Health * MaxHealth)
+          do
+            local _with_0 = self.Components
+            _with_0.BoundingBox.Position = BoxPosition
+            _with_0.BoundingBox.Size = BoxSize
+            _with_0.BoundingBox.Visible = Flags['ESP/BoxEnabled'].Value
+            _with_0.BoundingBox.Color = Flags['ESP/BoxColor'].Value
+            _with_0.BoundingBoxOutline.Position = BoxPosition
+            _with_0.BoundingBoxOutline.Size = BoxSize
+            _with_0.BoundingBoxOutline.Visible = _with_0.BoundingBox.Visible
+            _with_0.BoundingBoxFill.Position = BoxPosition
+            _with_0.BoundingBoxFill.Size = BoxSize
+            _with_0.BoundingBoxFill.Visible = Flags['ESP/BoxFillEnabled'].Value
+            _with_0.BoundingBoxFill.Color = Flags['ESP/BoxFillColor'].Value
+            _with_0.BoundingBoxFill.Transparency = Flags['ESP/BoxFillColor'].Transparency
+            _with_0.Name.Visible = Flags['ESP/NameEnabled'].Value
+            _with_0.Name.Position = _with_0.BoundingBox.Position + V2new(_with_0.BoundingBox.Size.X / 2, -15)
+            _with_0.Name.Color = Flags['ESP/NameColor'].Value
+            _with_0.HealthBar.Size = V2new(1, (floor(_with_0.BoundingBox.Size.Y * (Health / MaxHealth))))
+            _with_0.HealthBar.Position = V2new(_with_0.BoundingBox.Position.X - 4, (_with_0.BoundingBox.Position.Y + _with_0.BoundingBox.Size.Y) - floor(_with_0.BoundingBox.Size.Y * (Health / MaxHealth)))
+            _with_0.HealthBar.Visible = Flags['ESP/HealthBarEnabled'].Value
+            _with_0.HealthBar.Color = Color
+            _with_0.HealthBarOutline.Visible = _with_0.HealthBar.Visible
+            _with_0.HealthBarOutline.Size = V2new(3, _with_0.HealthBar.Size.Y + 2)
+            _with_0.HealthBarOutline.Position = V2new(_with_0.BoundingBox.Position.X - 5, _with_0.BoundingBox.Position.Y - 1)
+            _with_0.HealthText.Visible = Flags['ESP/HealthTextEnabled'].Value
+            _with_0.HealthText.Text = tostring(floor(Health))
+            _with_0.HealthText.Position = V2new(_with_0.HealthBarOutline.Position.X - 11, _with_0.HealthBar.Position.Y + _with_0.BoundingBox.Size.Y - (floor(_with_0.BoundingBox.Size.Y * (Health / MaxHealth)) + 3))
+            _with_0.HealthText.Color = Flags['ESP/HealthTextColor'].Value
+            _with_0.Distance.Visible = Flags['ESP/DistanceEnabled'].Value
+            _with_0.Distance.Text = tostring(floor(Distance / 3)) .. "m"
+            _with_0.Distance.Position = V2new(_with_0.BoundingBox.Position.X + _with_0.BoundingBox.Size.X / 2, _with_0.BoundingBox.Position.Y + _with_0.BoundingBox.Size.Y + 1)
+            _with_0.Distance.Color = Flags['ESP/DistanceColor'].Value
+          end
+          if Flags['ESP/ChamsEnabled'].Value then
+            local _list_1 = Character:GetChildren()
+            for _index_0 = 1, #_list_1 do
+              local Part = _list_1[_index_0]
+              if Part:IsA('BasePart') and not Part:FindFirstChildOfClass('BoxHandleAdornment') and not find({
+                'HeadTopHitBox',
+                'HumanoidRootPart',
+                'FaceHitBox'
+              }, Part.Name) then
+                local Cham = Instance.new('BoxHandleAdornment', Part)
+                Cham.ZIndex = 1
+                Cham.Adornee = Part
+                Cham.AlwaysOnTop = true
+                Cham.Size = Part.Size
+                Hax.Renderstepped(function()
+                  if self.Main == Hax.Closest.Player and Flags['SilentAim/HighlightTarget'].Value then
+                    if Flags['SilentAim/HighlightTargetPart'].Value and Flags['SilentAim/AimParts'].Value[Part.Name] then
+                      Cham.Color3 = Color3.fromRGB(Flags['SilentAim/HighlightTargetColor'].Value.X, Flags['SilentAim/HighlightTargetColor'].Value.Y, Flags['SilentAim/HighlightTargetColor'].Value.Z)
+                    elseif not Flags['SilentAim/HighlightTargetPart'].Value then
+                      Cham.Color3 = Color3.fromRGB(Flags['SilentAim/HighlightTargetColor'].Value.X, Flags['SilentAim/HighlightTargetColor'].Value.Y, Flags['SilentAim/HighlightTargetColor'].Value.Z)
+                    else
+                      Cham.Color3 = Flags['ESP/ChamsColor'].Value
+                    end
+                  else
+                    Cham.Color3 = Flags['ESP/ChamsColor'].Value
+                  end
+                end)
+                Part.Destroying:Connect(function()
+                  return Cham:Destroy()
+                end)
+              end
+            end
+          end
+        else
+          self:ToggleVisibility(false)
+          return 
+        end
+      end
+      Visuals.Objects.ESP[Player] = PlayerInfo
+      return PlayerInfo
+    end
+  }
+  _base_0.__index = _base_0
+  _class_0 = setmetatable({
+    __init = function() end,
+    __base = _base_0,
+    __name = "Visuals"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  local self = _class_0
+  Hax.Renderstepped(function()
+    local _list_1 = Players:GetPlayers()
+    for _index_0 = 1, #_list_1 do
+      local Player = _list_1[_index_0]
+      if Player ~= LocalPlayer and not Visuals.Objects.ESP[Player] then
+        Visuals:NewESP(Player, false)
+      end
+    end
+    local _list_2 = AiZones:GetDescendants()
+    for _index_0 = 1, #_list_2 do
+      local Ai = _list_2[_index_0]
+      if Ai:IsA('Model') and Ai:FindFirstChildOfClass('Humanoid') and not Visuals.Objects.ESP[Ai] then
+        Visuals:NewESP(Ai, true)
+      end
+    end
+    foreach(Visuals.Objects.ESP, function(Player, PlayerInfo)
+      if Player and Player.Parent then
+        return PlayerInfo:Update()
+      else
+        PlayerInfo:Destroy()
+        Visuals.Objects.ESP[Player] = nil
+      end
+    end)
+    if Flags['World/FullBrightEnabled'].Value then
+      Lighting.GlobalShadows = false
+      Lighting.Brightness = Flags['World/Brightness'].Value
+      Lighting.OutdoorAmbient = Flags['World/Ambient'].Value
+    end
+    Lighting.ClockTime = Flags['World/TimeOfDay'].Value
+    if Flags['World/NoFogEnabled'].Value then
+      Lighting.FogEnd = 9e9
+      Lighting.FogStart = 9e9
+      if Lighting:FindFirstChildOfClass('Atmosphere') then
+        Lighting:FindFirstChildOfClass('Atmosphere').Density = 0
+      end
+    end
+    Visuals.Objects.Fov.Visible = Flags['SilentAim/FovVisible'].Value
+    Visuals.Objects.Fov.Position = UserInputService:GetMouseLocation()
+    Visuals.Objects.Fov.Radius = Flags['SilentAim/Fov'].Value
+    if Hax.Closest.Player then
+      Visuals.Objects.Indicator.Visible = Flags['SilentAim/Indicator'].Value
+      Visuals.Objects.Indicator.Position = V2new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2 + 20)
+      Visuals.Objects.Indicator.Text = Hax.Closest.Player.Name
+      local TargetPosition = Camera:WorldToViewportPoint(Hax.Closest.HitPart.Position) or V2zero
+      Visuals.Objects.SnapLine.Visible = Flags['SilentAim/SnapLinesEnabled'].Value
+      Visuals.Objects.SnapLine.To = V2new(TargetPosition.X, TargetPosition.Y)
+      Visuals.Objects.SnapLine.From = UserInputService:GetMouseLocation()
+    else
+      Visuals.Objects.Indicator.Visible = false
+      Visuals.Objects.SnapLine.Visible = false
+    end
+  end)
+  Visuals = _class_0
+end
+Players.PlayerRemoving:Connect(function(Player)
+  if Visuals.Objects.ESP[Player] then
+    Visuals.Objects.ESP[Player]:Destroy()
+    Visuals.Objects.ESP[Player] = nil
+  end
+end)
+AiZones.DescendantRemoving:Connect(function(Descendant)
+  if Visuals.Objects.ESP[Descendant] then
+    Visuals.Objects.ESP[Descendant]:Destroy()
+    Visuals.Objects.ESP[Descendant] = nil
+  end
+end)
+LocalHumanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+local Track = Instance.new('Animation')
+Track.AnimationId = 'rbxassetid://15609995579'
+local Animation = nil
+Hax.Heartbeat(function()
+  if LocalHumanoid then
+    if Flags['Misc/WalkspeedEnabled'].Value then
+      LocalHumanoid.WalkSpeed = Flags['Misc/Walkspeed'].Value
+    end
+    if Flags['Misc/JumppowerEnabled'].Value then
+      LocalHumanoid.JumpHeight = Flags['Misc/Jumppower'].Value
+    end
+    if Flags['Misc/UndergroundEnabled'].Value then
+      if not (LocalCharacter and LocalHumanoid and LocalCharacter:FindFirstChild('HumanoidRootPart')) then
+        pcall(function()
+          return Animation:Stop()
+        end)
+        Animation = nil
+        return 
+      end
+      if not (Animation) then
+        Animation = LocalHumanoid:LoadAnimation(Track)
+      end
+      local OldCFrame = LocalRoot.CFrame
+      local Offset = LocalHumanoid.CameraOffset
+      Animation:Play(0, 1, 0)
+      Animation.TimePosition = 2.37
+      local NewCFrame = OldCFrame * CFnew(0, -1.1, 0) * CFAngles(rad(90), 0, 0)
+      LocalHumanoid.HipHeight = 0.1
+      LocalRoot.CFrame = NewCFrame
+      LocalHumanoid.CameraOffset = NewCFrame:ToObjectSpace(CFnew(OldCFrame.Position)).Position
+      RunService.RenderStepped:Wait()
+      Animation:Stop()
+      LocalHumanoid.CameraOffset = Offset
+      LocalHumanoid.HipHeight = 1
+      LocalRoot.CFrame = OldCFrame
+    end
+  end
+end)
+local Namecall = nil
+Namecall = hookmetamethod(game, '__namecall', function(self, ...)
+  local Method = getnamecallmethod()
+  local Args = {
+    ...
+  }
+  if checkcaller() then
+    return Namecall(self, ...)
+  end
+  local _exp_0 = Method
+  if 'FireServer' == _exp_0 then
+    local _exp_1 = self.Name
+    if 'ProjectileInflict' == _exp_1 then
+      if Args[3] >= 0 and Args[3] < 15 then
+        return task.wait(9e9)
+      end
+      if Flags['SilentAim/Enabled'].Value and Flags['SilentAim/ForceHit'].Value and Hax.Closest.Player then
+        if Flags['Debug/DebugEnabled'].Value then
+          print('Force Hit 2')
+          return 
+        end
+      end
+    elseif 'Drowning' == _exp_1 then
+      return 
+    elseif 'UpdateTilt' == _exp_1 then
+      if Flags['Misc/UndergroundEnabled'].Value then
+        Args[1] = 1
+      end
+    end
+  elseif 'InvokeServer' == _exp_0 then
+    local _exp_1 = self.Name
+    if 'FireProjectile' == _exp_1 then
+      if Flags['SilentAim/Enabled'].Value and Flags['SilentAim/ForceHit'].Value and Hax.Closest.Player then
+        local HitPart = Hax.Closest.HitPart
+        local RayPos = Hax.Closest.RayPosition or HitPart.Position
+        local Magic = HitPart.CFrame.ToObjectSpace(HitPart.CFrame, CFrame.new(RayPos))
+        local Id = Args[2]
+        local ProjectileTime = Hax.CurrentWeapon.ProjectileTime or 0
+        ProjectileInflict.FireServer(ProjectileInflict, HitPart, Magic, Id, tick() + ProjectileTime)
+        if Flags['Debug/DebugEnabled'].Value then
+          print('Force Hit 1 / HitPart: ', HitPart)
+        end
+      end
+    elseif 'Reload' == _exp_1 then
+      if Flags['GunMods/FastReload'].Value then
+        Args[2] = 0 / 0
+        Args[3] = nil
+      end
+    end
+  elseif 'GetAttribute' == _exp_0 then
+    local _exp_1 = Args[1]
+    if 'MovementModifer' == _exp_1 then
+      return 0
+    elseif 'BlockADS' == _exp_1 then
+      return false
+    end
+  end
+  return Namecall(self, unpack(Args))
+end)
+Hax.HookFunc(FPS.updateClient, function(OldUpdateClient, Player, DeltaTime)
+  if Flags['GunMods/RapidFireEnabled'].Value then
+    Player.FireModes = {
+      'Auto'
+    }
+    Player.FireRate = Flags['GunMods/RapidFireAmount'].Value / 1000
+  end
+  Player.TouchWallPosY = 0
+  Player.TouchWallPosZ = 0
+  Player.TouchWallRotX = 0
+  Player.TouchWallRotY = 0
+  for _, Animation in Player.clientAnimationTracks do
+    if Flags['GunMods/FastReload'].Value then
+      if Animation.Name == 'Reload' or Animation.Name == 'ReloadChamber' or Animation.Name == 'ReloadNoMag' then
+        Animation:AdjustSpeed(99)
+      end
+    end
+    if Flags['GunMods/FastEquipEnabled'].Value then
+      if Animation.Name == 'Equip' then
+        Animation:AdjustSpeed(99)
+      end
+    end
+  end
+  return OldUpdateClient(Player, DeltaTime)
+end)
+return Hax.HookFunc(Bullet.CreateBullet, function(OldCreateBullet, _, Weapon, WeaponModel, PlayerData, AimPart, ...)
+  if Flags['SilentAim/Enabled'].Value and Hax.Closest.Player then
+    local Ammo = Utils.GetAmmoInfo(select(2, ...))
+    if not (Ammo) then
+      return OldCreateBullet(_, Weapon, WeaponModel, PlayerData, AimPart, ...)
+    end
+    local MuzzleVelocity = Ammo:GetAttribute('MuzzleVelocity')
+    local ProjectileDrop = Ammo:GetAttribute('ProjectileDrop')
+    local ProjectileDrag = Ammo:GetAttribute('Drag' or 0)
+    MuzzleVelocity = MuzzleVelocity - (ProjectileDrag * MuzzleVelocity ^ 2 * (1 / 60) ^ 2)
+    local Prediction
+    if Flags['Resolver/Velocity'].Value then
+      Prediction = Utils.PredictVelocity(Hax.Closest.HitPart, MuzzleVelocity)
+    else
+      Prediction = Hax.Closest.HitPart.Position
+    end
+    local TargetPos = Prediction
+    local Origin = AimPart.Position
+    if Flags['Resolver/Underground'].Value then
+      local RootCF = LocalRoot.CFrame
+      LocalRoot.CFrame = RootCF * CFnew(0, -Flags['Resolver/UndergroundHeight'].Value, 0)
+      task.wait(0.05)
+      LocalRoot.CFrame = RootCF
+    end
+    local ProjectileTime = (TargetPos - Origin).Magnitude / MuzzleVelocity
+    local BulletDrop = V3new(0, ProjectileDrop * ProjectileTime ^ 2, 0)
+    do
+      local _with_0 = Hax.CurrentWeapon
+      _with_0.MuzzleVelocity = MuzzleVelocity
+      _with_0.ProjectileTime = ProjectileTime
+      _with_0.ProjectileDrop = BulletDrop
+    end
+    AimPart.CFrame = CFnew(Origin, TargetPos + BulletDrop)
+  end
+  return OldCreateBullet(_, Weapon, WeaponModel, PlayerData, AimPart, ...)
+end)
