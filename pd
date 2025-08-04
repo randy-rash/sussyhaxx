@@ -1,3 +1,4 @@
+--https://discord.gg/242DbjqvS3
 local insert, unpack, foreach, find
 do
   local _obj_0 = table
